@@ -10,6 +10,11 @@
 namespace rpi_diff_hw_control
 {
 
+    double rightPosition_ = 0.0;
+    double leftPosition_ = 0.0;
+    std::chrono::high_resolution_clock::time_point lastReadTime_ = std::chrono::high_resolution_clock::now();
+    
+
     /**
      * @brief: RpiController Constructor
     */
@@ -46,21 +51,21 @@ namespace rpi_diff_hw_control
         {
             RCLCPP_ERROR(logger_, "Invalid argument: %s", e.what());
             // Handle the error (provide default values or take appropriate action)
-            m_params.step_mode = 16;
+            m_Params.step_mode = 16;
             m_Params.loop_rate = 30.0;
             m_Params.baud_rate = 57600;
             m_Params.timeout = 1000;
-            m_Params.enc_counts_per_rev = 200 * m_params.step_mode;
+            m_Params.enc_counts_per_rev = 200 * m_Params.step_mode;
         } 
         catch (const std::out_of_range& e)
         {
             RCLCPP_ERROR(logger_, "Out of range: %s", e.what());
             // Handle the error (provide default values or take appropriate action)
-            m_params.step_mode = 16;
+            m_Params.step_mode = 16;
             m_Params.loop_rate = 30.0;
             m_Params.baud_rate = 57600;
             m_Params.timeout = 1000;
-            m_Params.enc_counts_per_rev = 200 * m_params.step_mode;
+            m_Params.enc_counts_per_rev = 200 * m_Params.step_mode;
         }
         
         hw_positions_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
@@ -214,7 +219,7 @@ namespace rpi_diff_hw_control
         int rightCPR = 3200; // Replace with your right encoder CPR
 
         // Assuming wheel radius in meters
-        double wheelRadius = 0.1/2;
+        double wheelRadius = 0.075/2;
 
         auto currentTime = std::chrono::high_resolution_clock::now();
     
@@ -227,24 +232,35 @@ namespace rpi_diff_hw_control
         int rightFreq = m_rpiDriveObj.readFreq("right");
 
         // Accumulate displacements to calculate positions
-        leftPosition_ += leftfreq * elapsedTime * (2 * M_PI * wheelRadius / leftCPR);
-        rightPosition_ += rightfreq * elapsedTime * (2 * M_PI * wheelRadius / leftCPR);
+        leftPosition_ += leftFreq * elapsedTime.count() * (2 * M_PI * wheelRadius / leftCPR);
+        rightPosition_ += rightFreq * elapsedTime.count() * (2 * M_PI * wheelRadius / leftCPR);
 
 
         // Calculate wheel velocities
-        double leftVelocity = leftfreq (2 * M_PI * wheelRadius / leftCPR)
-        double rightVelocity = rightfreq (2 * M_PI * wheelRadius / rightCPR)
+        double leftVelocity = leftFreq * (2 * M_PI * wheelRadius / leftCPR);
+        double rightVelocity = rightFreq * (2 * M_PI * wheelRadius / rightCPR);
+
+    
+        RCLCPP_INFO(
+        rclcpp::get_logger("DiffBotSystemHardware"), "Got reading %.5d for '%s'!", leftFreq,
+        info_.joints[0].name.c_str());
+        RCLCPP_INFO(
+        rclcpp::get_logger("DiffBotSystemHardware"), "Got reading %.5f for '%s'!", rightVelocity,
+        info_.joints[0].name.c_str());
 
         lastReadTime_ = currentTime;
 
         // Updating the current position
-        hw_positions_[0] = leftPosition;
-        hw_positions_[1] = rightPosition;
+        hw_positions_[0] = leftPosition_;
+        hw_positions_[1] = rightPosition_;
 
         // Updating the current velocity
         hw_velocities_[0] = leftVelocity;
         hw_velocities_[1] = rightVelocity;
 
+        // RCLCPP_INFO(
+        // rclcpp::get_logger("READFUNCTIONAAA"), "READ %.5f for '%s'!", hw_velocities_[0],
+        // info_.joints[0].name.c_str());
         return hardware_interface::return_type::OK;
     }
 

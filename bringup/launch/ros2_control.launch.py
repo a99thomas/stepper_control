@@ -32,8 +32,8 @@ def generate_launch_description():
     )
 
     joint_state_publisher = Node(
-        package="joint_state_publisher_gui",
-        executable="joint_state_publisher_gui",
+        package="joint_state_publisher",
+        executable="joint_state_publisher",
         output="screen",
     )
 
@@ -89,11 +89,11 @@ def generate_launch_description():
     )
     
     nodes = [
-        joint_state_publisher,
+        # joint_state_publisher,
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
-        delay_rviz_after_joint_state_broadcaster_spawner,
+        # delay_rviz_after_joint_state_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
     ]
 
